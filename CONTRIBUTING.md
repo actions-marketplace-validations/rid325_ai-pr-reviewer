@@ -1,77 +1,47 @@
-# Contributing to AI PR Reviewer
+# Contributing to ReviewBot
 
-Thanks for helping improve this project. Keep PRs focused and small.
+Keep changes focused and include a regression test for behavior changes.
 
-## Local development setup
-
-1. Clone the repo and install dependencies:
+## Local setup
 
 ```bash
-git clone https://github.com/rid325/ai-pr-reviewer.git
-cd ai-pr-reviewer
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+python -m compileall -q reviewbot scripts
 ```
 
-2. Set the required environment variables:
+The CI workflow runs those checks and builds the Action container.
 
-```bash
-export INPUT_GITHUB_TOKEN="ghp_..."
-export INPUT_GEMINI_API_KEY="..."
-export GITHUB_REPOSITORY="owner/repo"
-export GITHUB_EVENT_PATH="./test-event.json"
-export INPUT_IGNORE_PATTERNS="*.lock,package-lock.json"
-export INPUT_MAX_DIFF_LINES="500"
-```
+## Safe integration testing
 
-3. Create a `test-event.json` from a real PR webhook payload (or copy the `pull_request` object from a GitHub delivery log). At minimum it needs:
+Create a draft pull request in a test repository. Set the normal Action environment variables and enable `INPUT_DRY_RUN=true` while iterating; there is no need to edit out posting code. A minimal event fixture is:
 
 ```json
-{ "pull_request": { "number": 42 } }
+{"pull_request": {"number": 42}}
 ```
 
-4. Run the reviewer locally without triggering the full Action:
+Then run:
 
 ```bash
-python scripts/fetch_pr_diff.py
+export GITHUB_REPOSITORY="owner/repo"
+export GITHUB_EVENT_PATH="$PWD/test-event.json"
+export INPUT_GITHUB_TOKEN="..."
+export INPUT_GEMINI_API_KEY="..."
+export INPUT_DRY_RUN="true"
+python -m reviewbot.runner
 ```
 
-Use a draft PR in your fork so you can test against a real diff without spamming production repos.
+Do not commit keys or event payloads containing private data.
 
-## How to test
+## Architecture boundaries
 
-Open a **draft PR** in this repo (or your fork) with intentional test bugs. The workflow in `.github/workflows/review.yml` runs on `opened` and `synchronize`. Draft PRs still trigger the workflow, but reviewers are less likely to be notified.
+- `reviewbot/core.py` contains deterministic diff and validation logic.
+- `reviewbot/github_client.py` owns GitHub HTTP behavior.
+- `reviewbot/gemini_client.py` owns model prompting and structured output.
+- `reviewbot/runner.py` coordinates one Action run.
 
-To avoid posting comments while iterating, temporarily comment out the GitHub posting block in `fetch_pr_diff.py` or point `GITHUB_REPOSITORY` at a private test repo.
+Keep provider-specific behavior behind an adapter so the validation and posting pipeline stays provider-independent. See [docs/DESIGN.md](docs/DESIGN.md).
 
-## Adding support for a new LLM
-
-The Gemini API call is located in `scripts/fetch_pr_diff.py` where `client.models.generate_content(...)` is called. To swap providers (OpenAI, Claude, etc.):
-
-1. Replace the Google `genai.Client` setup with your provider client setup at the top of the file.
-2. Update the prompt generation and model API call block to use your provider's SDK.
-3. Ensure your provider client returns a response in the same JSON array schema, using JSON mode or equivalent structured output.
-
-The rest of the pipeline (diff fetching, chunking, comment posting) is provider-agnostic.
-
-## Commit message format
-
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` new feature
-- `fix:` bug fix
-- `docs:` documentation only
-- `refactor:` code change that neither fixes a bug nor adds a feature
-
-Example: `feat: add ignore_patterns input for fnmatch filtering`
-
-## Opening issues
-
-Include:
-
-- **Repo language/stack** (e.g. Python 3.10, Node 20)
-- **Diff size** (files changed, approximate lines)
-- **What the bot said** (copy the comment or summary)
-- **What it should have said** (expected behavior)
-- **Action logs** (relevant lines showing skipped files or chunk counts)
-
-Screenshots of inline comments help a lot.
+Use Conventional Commit prefixes such as `feat:`, `fix:`, `test:`, `docs:`, and `refactor:`. Issue reports should include the Action run link, approximate diff size, relevant skipped-file summary, observed result, and expected result—with secrets removed.

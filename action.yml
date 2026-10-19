@@ -17,6 +17,26 @@ inputs:
     required: false
     description: 'Maximum added/removed lines per Gemini API call; larger diffs are split into chunks'
     default: '500'
+  max_comments:
+    required: false
+    description: 'Maximum number of validated review comments to post'
+    default: '20'
+  model:
+    required: false
+    description: 'Gemini model ID used for review'
+    default: 'gemini-3.8-flash'
+  dry_run:
+    required: false
+    description: 'Analyze and print findings without posting to the pull request'
+    default: 'false'
+
+outputs:
+  issues_found:
+    description: 'Number of validated findings'
+  files_reviewed:
+    description: 'Number of files sent for review'
+  files_skipped:
+    description: 'Number of files skipped by filters or limits'
 
 runs:
   using: 'docker'
