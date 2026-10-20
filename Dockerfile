@@ -8,7 +8,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY reviewbot/ /app/reviewbot/
 COPY scripts/ /app/scripts/
 RUN useradd --create-home --uid 10001 reviewbot && chown -R reviewbot:reviewbot /app
-USER reviewbot
 
-ENTRYPOINT ["python", "-m", "reviewbot.runner"]
-
+ENTRYPOINT ["python", "-m", "reviewbot.container_entrypoint"]

@@ -30,6 +30,8 @@ Authentication, quota, model, schema, and GitHub posting errors produce a non-ze
 
 Gemini requests have a 60-second deadline. SDK-level retries are disabled and the adapter owns the retry policy, preventing nested retries from turning a temporary 503 into an unbounded job. Models are tried in configured order; the default favors the stable high-throughput Gemini 3.5 Flash-Lite and falls back once to Gemini 3.1 Flash-Lite. Users can select Gemini 3.8 Flash when its additional reasoning quality is worth higher latency and current capacity allows it.
 
+The container starts only long enough as root to change ownership of files under GitHub's fixed `/github/file_commands` mount. It rejects any other path and immediately drops to UID/GID 10001 before importing or running the reviewer.
+
 ## Known extensions
 
 - Fetch limited surrounding source context after validating paths.
