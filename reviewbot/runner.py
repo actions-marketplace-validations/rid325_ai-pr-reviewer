@@ -76,7 +76,7 @@ def run() -> int:
     models = [
         item.strip()
         for item in os.getenv(
-            "INPUT_MODEL", "gemini-3.8-flash,gemini-3.5-flash-lite"
+            "INPUT_MODEL", "gemini-3.5-flash-lite,gemini-3.1-flash-lite"
         ).split(",")
         if item.strip()
     ]

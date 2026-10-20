@@ -79,7 +79,6 @@ class GeminiReviewer:
                             system_instruction=SYSTEM_INSTRUCTION,
                             response_mime_type="application/json",
                             response_json_schema=FINDING_SCHEMA,
-                            temperature=0.1,
                         ),
                     )
                     return json.loads(response.text or "")

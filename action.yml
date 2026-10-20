@@ -24,7 +24,7 @@ inputs:
   model:
     required: false
     description: 'Comma-separated Gemini model IDs, in preferred/fallback order'
-    default: 'gemini-3.8-flash,gemini-3.5-flash-lite'
+    default: 'gemini-3.5-flash-lite,gemini-3.1-flash-lite'
   dry_run:
     required: false
     description: 'Analyze and print findings without posting to the pull request'

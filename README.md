@@ -52,7 +52,7 @@ Pin an immutable release such as `@v2.0.0` instead of `@v2` when reproducibility
 | `ignore_patterns` | no | `*.lock,package-lock.json,*.generated.*` | Comma-separated `fnmatch` patterns |
 | `max_diff_lines` | no | `500` | Changed lines per model request; minimum 25 |
 | `max_comments` | no | `20` | Validated findings posted per run; maximum 50 |
-| `model` | no | `gemini-3.8-flash,gemini-3.5-flash-lite` | Comma-separated preferred and fallback model IDs |
+| `model` | no | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Comma-separated preferred and fallback model IDs |
 | `dry_run` | no | `false` | Analyze and log without posting |
 
 The Action outputs `issues_found`, `files_reviewed`, and `files_skipped` for downstream steps.
