@@ -1,14 +1,12 @@
-![ReviewBot demo](assets/demo.gif)
-
 # ReviewBot
 
 A defensive GitHub Action that uses Gemini to review pull-request diffs and leaves comments only after mapping every finding back to a real added line.
 
 ## See it in action
 
-This is a real inline review produced while ReviewBot reviewed its own v2 pull request. Findings remain advisory, but every posted comment is first mapped back to an actual added line.
+The demo follows one review through pagination, diff budgeting, model fallback, finding validation, inline posting, and CI verification. Select the preview to open the full MP4.
 
-<img width="930" alt="ReviewBot posting a validated inline GitHub review with a suggested-change block" src="https://github.com/user-attachments/assets/82226dce-7f6b-447a-8645-d07fd94eb514" />
+[![ReviewBot end-to-end demo](assets/reviewbot-demo.gif)](assets/reviewbot-demo.mp4)
 
 [![CI](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml)
 [![Review PRs](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml)
@@ -111,5 +109,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 pytest -q
 docker build -t reviewbot .
 ```
+
+The demo assets are reproducible with `python scripts/build_demo_video.py`; pass `--ffmpeg /path/to/ffmpeg` when FFmpeg is not on `PATH`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [MIT](LICENSE).

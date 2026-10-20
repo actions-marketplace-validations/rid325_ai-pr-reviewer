@@ -15,3 +15,4 @@
 - Added idempotent summary comments and a 422 posting fallback.
 - Added dry-run mode, outputs, tests, CI, and non-root Python 3.12 container.
 - Documented prompt-injection, fork-secret, and least-privilege constraints.
+- Added a reproducible end-to-end demo video and animated README preview.
