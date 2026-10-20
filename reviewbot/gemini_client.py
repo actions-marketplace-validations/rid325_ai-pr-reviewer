@@ -38,8 +38,23 @@ code for that line and must be omitted when a safe local replacement is not poss
 
 
 class GeminiReviewer:
-    def __init__(self, api_key: str, model: str, attempts: int = 3, client=None):
-        self.client = client or genai.Client(api_key=api_key)
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        attempts: int = 3,
+        request_timeout_ms: int = 60_000,
+        client=None,
+    ):
+        # The SDK otherwise retries transient failures five times internally.
+        # ReviewBot owns retry policy so total latency remains predictable.
+        self.client = client or genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                timeout=request_timeout_ms,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
         self.model = model
         self.attempts = attempts
 
@@ -65,5 +80,9 @@ class GeminiReviewer:
             except Exception as error:
                 last_error = error
                 if attempt + 1 < self.attempts:
+                    print(
+                        f"Gemini attempt {attempt + 1}/{self.attempts} failed; retrying: {error}",
+                        flush=True,
+                    )
                     time.sleep(2 ** attempt)
         raise RuntimeError(f"Gemini review failed after {self.attempts} attempts: {last_error}") from last_error

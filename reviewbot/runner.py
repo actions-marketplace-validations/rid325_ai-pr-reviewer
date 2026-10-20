@@ -83,7 +83,8 @@ def run() -> int:
     rejected: list[str] = []
     if prepared.chunks:
         reviewer = GeminiReviewer(api_key, model)
-        for chunk in prepared.chunks:
+        for index, chunk in enumerate(prepared.chunks, start=1):
+            print(f"Reviewing chunk {index}/{len(prepared.chunks)}...", flush=True)
             findings, invalid = validate_findings(
                 reviewer.review(chunk), prepared.commentable_lines, max_comments - len(all_findings),
             )

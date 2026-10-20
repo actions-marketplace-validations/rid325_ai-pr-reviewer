@@ -42,3 +42,17 @@ def test_exhausted_retries_fail_the_action(monkeypatch):
     fake = Client([RuntimeError("bad"), RuntimeError("bad")])
     with pytest.raises(RuntimeError, match="after 2 attempts"):
         GeminiReviewer("key", "model", attempts=2, client=fake).review("diff")
+
+
+def test_disables_nested_sdk_retries_and_sets_deadline(monkeypatch):
+    captured = {}
+
+    def build_client(**kwargs):
+        captured.update(kwargs)
+        return Client(['{"findings": []}'])
+
+    monkeypatch.setattr("reviewbot.gemini_client.genai.Client", build_client)
+    GeminiReviewer("key", "model", request_timeout_ms=12_345)
+    options = captured["http_options"]
+    assert options.timeout == 12_345
+    assert options.retry_options.attempts == 1
