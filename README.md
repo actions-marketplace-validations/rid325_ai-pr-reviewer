@@ -4,6 +4,12 @@
 
 A defensive GitHub Action that uses Gemini to review pull-request diffs and leaves comments only after mapping every finding back to a real added line.
 
+## See it in action
+
+This is a real inline review produced while ReviewBot reviewed its own v2 pull request. Findings remain advisory, but every posted comment is first mapped back to an actual added line.
+
+<img width="930" alt="ReviewBot posting a validated inline GitHub review with a suggested-change block" src="https://github.com/user-attachments/assets/82226dce-7f6b-447a-8645-d07fd94eb514" />
+
 [![CI](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml)
 [![Review PRs](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml)
 [![License: MIT](https://img.shields.io/github/license/rid325/ai-pr-reviewer)](LICENSE)
