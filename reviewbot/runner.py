@@ -73,8 +73,14 @@ def run() -> int:
     if not 1 <= max_comments <= 50:
         raise ValueError("INPUT_MAX_COMMENTS must be between 1 and 50")
     dry_run = _boolean("INPUT_DRY_RUN")
-    model = os.getenv("INPUT_MODEL", "gemini-3.8-flash").strip()
-    if not model:
+    models = [
+        item.strip()
+        for item in os.getenv(
+            "INPUT_MODEL", "gemini-3.8-flash,gemini-3.5-flash-lite"
+        ).split(",")
+        if item.strip()
+    ]
+    if not models:
         raise ValueError("INPUT_MODEL must not be empty")
 
     github = GitHubClient(repository, token)
@@ -82,7 +88,7 @@ def run() -> int:
     all_findings: list[Finding] = []
     rejected: list[str] = []
     if prepared.chunks:
-        reviewer = GeminiReviewer(api_key, model)
+        reviewer = GeminiReviewer(api_key, models)
         for index, chunk in enumerate(prepared.chunks, start=1):
             print(f"Reviewing chunk {index}/{len(prepared.chunks)}...", flush=True)
             findings, invalid = validate_findings(

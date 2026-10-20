@@ -52,7 +52,7 @@ Pin an immutable release such as `@v2.0.0` instead of `@v2` when reproducibility
 | `ignore_patterns` | no | `*.lock,package-lock.json,*.generated.*` | Comma-separated `fnmatch` patterns |
 | `max_diff_lines` | no | `500` | Changed lines per model request; minimum 25 |
 | `max_comments` | no | `20` | Validated findings posted per run; maximum 50 |
-| `model` | no | `gemini-3.8-flash` | Gemini model ID |
+| `model` | no | `gemini-3.8-flash,gemini-3.5-flash-lite` | Comma-separated preferred and fallback model IDs |
 | `dry_run` | no | `false` | Analyze and log without posting |
 
 The Action outputs `issues_found`, `files_reviewed`, and `files_skipped` for downstream steps.
@@ -93,7 +93,7 @@ See [the design notes](docs/DESIGN.md) for trade-offs and [the security policy](
 - GitHub can omit `patch` for binary or very large files; these are named in the summary and skipped.
 - The total review budget is four times `max_diff_lines`; files beyond it are reported as skipped. This bounds cost and latency.
 - Findings are limited to added right-side lines, so a real issue caused only by deleted or unchanged code cannot receive an inline comment.
-- Model availability, quota, price, and behavior are controlled by Google. Override `model` if the default is unavailable to your account.
+- Model availability, quota, price, and behavior are controlled by Google. ReviewBot tries configured model IDs in order; override `model` if either default is unavailable to your account.
 
 ## Development
 

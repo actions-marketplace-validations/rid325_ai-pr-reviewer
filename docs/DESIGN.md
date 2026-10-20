@@ -26,7 +26,7 @@ Validated findings are submitted in a single GitHub review. A 422 response—usu
 
 Authentication, quota, model, schema, and GitHub posting errors produce a non-zero exit. Silent success is worse than a failed check because it makes maintainers believe a review occurred.
 
-Gemini requests have a 60-second deadline. SDK-level retries are disabled and the adapter owns exactly three attempts with short exponential delays, preventing nested retry policies from turning a temporary 503 into an unbounded job.
+Gemini requests have a 60-second deadline. SDK-level retries are disabled and the adapter owns the retry policy, preventing nested retries from turning a temporary 503 into an unbounded job. Models are tried in configured order; the default uses Gemini 3.8 Flash and falls back once to Gemini 3.5 Flash-Lite when the preferred endpoint is unavailable.
 
 ## Known extensions
 

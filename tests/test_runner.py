@@ -29,7 +29,7 @@ class GitHub:
 class Reviewer:
     def __init__(self, api_key, model):
         self.api_key = api_key
-        self.model = model
+        self.models = model
 
     def review(self, diff):
         return {"findings": [{"file": "app.py", "line": 1, "severity": "high", "comment": "Bug"}]}

@@ -33,7 +33,7 @@ def test_structured_response_and_untrusted_diff_boundary():
 def test_retry_then_success(monkeypatch):
     monkeypatch.setattr("reviewbot.gemini_client.time.sleep", lambda _: None)
     fake = Client([RuntimeError("temporary"), '{"findings": []}'])
-    assert GeminiReviewer("key", "model", client=fake).review("diff") == {"findings": []}
+    assert GeminiReviewer("key", "model", attempts=2, client=fake).review("diff") == {"findings": []}
     assert len(fake.models.calls) == 2
 
 
@@ -42,6 +42,14 @@ def test_exhausted_retries_fail_the_action(monkeypatch):
     fake = Client([RuntimeError("bad"), RuntimeError("bad")])
     with pytest.raises(RuntimeError, match="after 2 attempts"):
         GeminiReviewer("key", "model", attempts=2, client=fake).review("diff")
+
+
+def test_falls_back_to_second_model(monkeypatch):
+    monkeypatch.setattr("reviewbot.gemini_client.time.sleep", lambda _: None)
+    fake = Client([RuntimeError("capacity"), '{"findings": []}'])
+    result = GeminiReviewer("key", ["preferred", "fallback"], client=fake).review("diff")
+    assert result == {"findings": []}
+    assert [call["model"] for call in fake.models.calls] == ["preferred", "fallback"]
 
 
 def test_disables_nested_sdk_retries_and_sets_deadline(monkeypatch):
