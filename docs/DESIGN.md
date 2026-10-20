@@ -18,6 +18,8 @@ GitHub's review API accepts right-side line comments only at valid diff position
 
 Files are sorted by changed-line count, individual requests are capped by `max_diff_lines`, and the run has a total budget of four times that value. A maximum comment count prevents noisy reviews. Every skipped file and reason appears in the PR summary.
 
+At most four chunks are generated. A 30-second default interval between chunk requests trades a small amount of latency for compatibility with constrained Gemini API tiers; users with higher quotas can set it to zero.
+
 ### Prefer one review and one summary
 
 Validated findings are submitted in a single GitHub review. A 422 response—usually an invalidated diff position after a force-push—falls back to a general PR comment so useful feedback is not lost. The run summary carries a hidden marker and is updated rather than duplicated.

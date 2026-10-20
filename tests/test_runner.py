@@ -45,6 +45,7 @@ def set_environment(monkeypatch, tmp_path):
         "GITHUB_EVENT_PATH": str(event),
         "INPUT_MAX_DIFF_LINES": "25",
         "INPUT_MAX_COMMENTS": "5",
+        "INPUT_REQUEST_INTERVAL_SECONDS": "0",
         "INPUT_MODEL": "test-model",
     }
     for key, value in values.items():

@@ -52,6 +52,7 @@ Pin an immutable release such as `@v2.0.0` instead of `@v2` when reproducibility
 | `ignore_patterns` | no | `*.lock,package-lock.json,*.generated.*` | Comma-separated `fnmatch` patterns |
 | `max_diff_lines` | no | `500` | Changed lines per model request; minimum 25 |
 | `max_comments` | no | `20` | Validated findings posted per run; maximum 50 |
+| `request_interval_seconds` | no | `30` | Pause between chunk requests; maximum 60 |
 | `model` | no | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Comma-separated preferred and fallback model IDs |
 | `dry_run` | no | `false` | Analyze and log without posting |
 
@@ -91,7 +92,7 @@ See [the design notes](docs/DESIGN.md) for trade-offs and [the security policy](
 
 - ReviewBot sees a diff, not full runtime behavior or complete repository context. Findings are advisory and require human judgment.
 - GitHub can omit `patch` for binary or very large files; these are named in the summary and skipped.
-- The total review budget is four times `max_diff_lines`; files beyond it are reported as skipped. This bounds cost and latency.
+- The total review budget is four times `max_diff_lines`; files beyond it are reported as skipped. At most four chunks are sent, with a configurable interval between them to respect constrained API tiers.
 - Findings are limited to added right-side lines, so a real issue caused only by deleted or unchanged code cannot receive an inline comment.
 - Model availability, quota, price, and behavior are controlled by Google. ReviewBot tries configured model IDs in order; override `model` if either default is unavailable to your account.
 

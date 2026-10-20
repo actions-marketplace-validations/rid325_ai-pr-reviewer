@@ -21,6 +21,10 @@ inputs:
     required: false
     description: 'Maximum number of validated review comments to post'
     default: '20'
+  request_interval_seconds:
+    required: false
+    description: 'Minimum pause between diff-chunk requests to respect constrained API tiers'
+    default: '30'
   model:
     required: false
     description: 'Comma-separated Gemini model IDs, in preferred/fallback order'

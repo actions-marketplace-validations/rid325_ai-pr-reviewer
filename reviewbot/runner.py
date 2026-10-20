@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import time
 
 from reviewbot.core import Finding, prepare_diff, validate_findings
 from reviewbot.gemini_client import GeminiReviewer
@@ -72,6 +73,9 @@ def run() -> int:
     max_comments = int(os.getenv("INPUT_MAX_COMMENTS", "20"))
     if not 1 <= max_comments <= 50:
         raise ValueError("INPUT_MAX_COMMENTS must be between 1 and 50")
+    request_interval = int(os.getenv("INPUT_REQUEST_INTERVAL_SECONDS", "30"))
+    if not 0 <= request_interval <= 60:
+        raise ValueError("INPUT_REQUEST_INTERVAL_SECONDS must be between 0 and 60")
     dry_run = _boolean("INPUT_DRY_RUN")
     models = [
         item.strip()
@@ -90,6 +94,12 @@ def run() -> int:
     if prepared.chunks:
         reviewer = GeminiReviewer(api_key, models)
         for index, chunk in enumerate(prepared.chunks, start=1):
+            if index > 1 and request_interval:
+                print(
+                    f"Waiting {request_interval}s before the next model request...",
+                    flush=True,
+                )
+                time.sleep(request_interval)
             print(f"Reviewing chunk {index}/{len(prepared.chunks)}...", flush=True)
             findings, invalid = validate_findings(
                 reviewer.review(chunk), prepared.commentable_lines, max_comments - len(all_findings),
