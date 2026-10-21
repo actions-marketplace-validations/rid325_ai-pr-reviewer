@@ -14,6 +14,10 @@ There are three untrusted inputs: the pull-request diff, the model response, and
 
 GitHub's review API accepts right-side line comments only at valid diff positions. The parser builds the allowed line set from each unified-diff hunk. This also prevents a model from inventing a filename or line number. The trade-off is that deletion-only findings can appear only in a general summary, which v2 does not yet generate.
 
+The `patch` field from GitHub's pull-request files API begins at an `@@` hunk header and does not contain `---` or `+++` file headers.
+Prefix-based header skipping is therefore incorrect because changed content can itself begin with `--` or `++`.
+ReviewBot ignores input before the first hunk, then classifies each hunk line by its first diff marker so changed-line counts and right-side line numbers stay aligned.
+
 ### Bound cost and latency
 
 Files are sorted by changed-line count, individual requests are capped by `max_diff_lines`, and the run has a total budget of four times that value. A maximum comment count prevents noisy reviews. Every skipped file and reason appears in the PR summary.
