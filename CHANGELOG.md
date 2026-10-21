@@ -2,6 +2,7 @@
 
 ## 2.0.0
 
+- Fixed diff parsing for added or removed content beginning with `++` or `--`.
 - Split deterministic core, GitHub transport, Gemini adapter, and orchestration code.
 - Added paginated changed-file retrieval and explicit HTTP timeouts.
 - Added schema-constrained Gemini responses with bounded retry behavior.
@@ -15,4 +16,4 @@
 - Added idempotent summary comments and a 422 posting fallback.
 - Added dry-run mode, outputs, tests, CI, and non-root Python 3.12 container.
 - Documented prompt-injection, fork-secret, and least-privilege constraints.
-- Added a reproducible end-to-end demo video and animated README preview.
+- Added a live end-to-end PR review demo and README preview.

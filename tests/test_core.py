@@ -17,6 +17,55 @@ def test_counts_and_maps_only_added_lines():
     assert added_lines(PATCH) == {2, 3}
 
 
+def test_removed_sql_comment_does_not_shift_added_line():
+    patch = """@@ -1,3 +1,3 @@
+ context
+--- old sql comment
++new line
+ context2
+"""
+    assert added_lines(patch) == {2}
+    assert count_diff_lines(patch) == 2
+
+
+def test_added_increment_expression_is_counted_and_commentable():
+    patch = """@@ -1 +1,2 @@
+ context
++++i;
+"""
+    assert count_diff_lines(patch) == 1
+    assert added_lines(patch) == {2}
+
+
+def test_removed_markdown_rule_does_not_shift_later_line():
+    patch = """@@ -1,3 +1,3 @@
+ context
+----
++replacement
+ tail
+"""
+    assert added_lines(patch) == {2}
+    assert count_diff_lines(patch) == 2
+
+
+def test_large_hunk_with_sql_comment_keeps_continuation_line_number():
+    lines = [
+        "@@ -1,2 +1,27 @@",
+        " context",
+        "--- sql comment",
+        "+replacement",
+        *[f"+added {index}" for index in range(25)],
+    ]
+    prepared = prepare_diff(
+        [{"filename": "large.sql", "patch": "\n".join(lines), "changes": 27}],
+        [],
+        25,
+    )
+    assert len(prepared.chunks) == 2
+    assert "@@ continuation +26 @@" in prepared.chunks[1]
+    assert prepared.commentable_lines["large.sql"] == set(range(2, 28))
+
+
 def test_prepare_diff_filters_missing_and_ignored_files():
     prepared = prepare_diff(
         [

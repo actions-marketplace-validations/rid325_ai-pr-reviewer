@@ -37,11 +37,15 @@ class Finding:
 
 
 def count_diff_lines(patch: str) -> int:
-    return sum(
-        1 for line in patch.splitlines()
-        if (line.startswith("+") or line.startswith("-"))
-        and not line.startswith("+++") and not line.startswith("---")
-    )
+    changed = 0
+    in_hunk = False
+    for line in patch.splitlines():
+        if HUNK_HEADER.match(line):
+            in_hunk = True
+            continue
+        if in_hunk and (line.startswith("+") or line.startswith("-")):
+            changed += 1
+    return changed
 
 
 def added_lines(patch: str) -> set[int]:
@@ -55,10 +59,10 @@ def added_lines(patch: str) -> set[int]:
             continue
         if new_line is None or line.startswith("\\ No newline"):
             continue
-        if line.startswith("+") and not line.startswith("+++"):
+        if line.startswith("+"):
             result.add(new_line)
             new_line += 1
-        elif line.startswith("-") and not line.startswith("---"):
+        elif line.startswith("-"):
             continue
         else:
             new_line += 1
@@ -70,13 +74,16 @@ def _split_large_patch(filename: str, patch: str, max_diff_lines: int) -> list[s
     part: list[str] = []
     changed = 0
     new_line: int | None = None
+    in_hunk = False
     for line in patch.splitlines():
         header = HUNK_HEADER.match(line)
         if header:
+            in_hunk = True
             new_line = int(header.group(1))
         is_changed = (
-            (line.startswith("+") or line.startswith("-"))
-            and not line.startswith("+++") and not line.startswith("---")
+            in_hunk
+            and not header
+            and (line.startswith("+") or line.startswith("-"))
         )
         if part and is_changed and changed >= max_diff_lines:
             chunks.append(f"\n=== {filename} ===\n" + "\n".join(part))
