@@ -4,9 +4,11 @@ A defensive GitHub Action that uses Gemini to review pull-request diffs and leav
 
 ## See it in action
 
-The demo follows one review through pagination, diff budgeting, model fallback, finding validation, inline posting, and CI verification. Select the preview to open the full MP4.
+This is a screen recording of ReviewBot reviewing its own production pull request. It shows the merged PR, the successful chunked GitHub Actions run, a line-validated inline finding with a suggested change, and the idempotent advisory summary. Select the preview to open the 1080p MP4.
 
-[![ReviewBot end-to-end demo](assets/reviewbot-demo.gif)](assets/reviewbot-demo.mp4)
+[![ReviewBot live pull-request demo](assets/reviewbot-live-pr-demo.png)](assets/reviewbot-live-pr-demo.mp4)
+
+The source run is [pull request #12](https://github.com/rid325/ai-pr-reviewer/pull/12); its final ReviewBot job completed successfully and reviewed 26 files / 1,869 changed lines.
 
 [![CI](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml)
 [![Review PRs](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml)
@@ -109,7 +111,5 @@ pip install -r requirements.txt -r requirements-dev.txt
 pytest -q
 docker build -t reviewbot .
 ```
-
-The demo assets are reproducible with `python scripts/build_demo_video.py`; pass `--ffmpeg /path/to/ffmpeg` when FFmpeg is not on `PATH`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [MIT](LICENSE).
