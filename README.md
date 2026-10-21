@@ -1,106 +1,115 @@
-![Demo](assets/demo.gif)
+# ReviewBot
 
-# AI PR Reviewer
+A defensive GitHub Action that uses Gemini to review pull-request diffs and leaves comments only after mapping every finding back to a real added line.
 
-A GitHub Action that reviews pull requests with AI — flags bugs, security issues, and complexity hotspots as inline PR comments.
+## See it in action
 
-[![Review PRs](https://img.shields.io/github/actions/workflow/status/rid325/ai-pr-reviewer/review.yml?label=review)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml)
+This is a screen recording of ReviewBot reviewing its own production pull request. It shows the merged PR, the successful chunked GitHub Actions run, a line-validated inline finding with a suggested change, and the idempotent advisory summary. Select the preview to open the 1080p MP4.
+
+[![ReviewBot live pull-request demo](assets/reviewbot-live-pr-demo.png)](assets/reviewbot-live-pr-demo.mp4)
+
+The source run is [pull request #12](https://github.com/rid325/ai-pr-reviewer/pull/12); its final ReviewBot job completed successfully and reviewed 26 files / 1,869 changed lines.
+
+[![CI](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/ci.yml)
+[![Review PRs](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml/badge.svg)](https://github.com/rid325/ai-pr-reviewer/actions/workflows/review.yml)
 [![License: MIT](https://img.shields.io/github/license/rid325/ai-pr-reviewer)](LICENSE)
-[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 
-## What it does
+## Why this is more than an API wrapper
 
-- **Null pointer / missing checks** — catches dereferences and division-by-zero when guards are absent from the diff
-- **Hardcoded secrets** — flags API keys, passwords, and tokens committed as string literals
-- **SQL injection patterns** — detects string-concatenated queries instead of parameterized statements
-- **Performance hotspots** — surfaces nested loops and other O(n²) patterns in changed code
-- **Actionable fixes** — posts GitHub suggestion blocks you can apply in one click
+LLM output is never trusted directly. ReviewBot paginates GitHub's changed-file API, filters and budgets the diff, requests schema-constrained JSON, and then rejects hallucinated filenames, non-added line numbers, invalid severity values, oversized comments, and duplicates before posting. A failed Gemini or GitHub request fails the Action instead of reporting a false success.
+
+It is designed to find concrete correctness, security, error-handling, and material performance problems. It deliberately avoids style-only feedback.
 
 ## Setup
 
-1. Add a `GEMINI_API_KEY` secret to your repository (**Settings → Secrets and variables → Actions**).
-2. Create `.github/workflows/ai-review.yml` in your repo:
+1. Create a Gemini API key and save it as the repository secret `GEMINI_API_KEY`.
+2. Add `.github/workflows/reviewbot.yml`:
 
 ```yaml
-name: AI Code Review
+name: ReviewBot
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   review:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
       contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: AI Code Review
-        uses: rid325/ai-pr-reviewer@v1.0.0
+      - uses: rid325/ai-pr-reviewer@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
 ```
 
-3. Open a pull request — the workflow runs automatically.
-4. Wait ~30 seconds for inline comments and a summary to appear on the PR.
-5. Merge the suggested fixes or dismiss false positives.
+Pin an immutable release such as `@v2.0.0` instead of `@v2` when reproducibility matters more than automatic compatible fixes.
 
 ## Configuration
 
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `github_token` | Yes | — | GitHub token with `pull-requests: write` permission |
-| `gemini_api_key` | Yes | — | Google Gemini API key |
-| `ignore_patterns` | No | `*.lock,package-lock.json,*.generated.*` | Comma-separated [fnmatch](https://docs.python.org/3/library/fnmatch.html) patterns for files to skip |
-| `max_diff_lines` | No | `500` | Max added/removed lines per Gemini call; larger diffs are split into chunks |
+| Input | Required | Default | Purpose |
+|---|---:|---|---|
+| `github_token` | yes | — | Token with `pull-requests: write` |
+| `gemini_api_key` | yes | — | Gemini API credential |
+| `ignore_patterns` | no | `*.lock,package-lock.json,*.generated.*` | Comma-separated `fnmatch` patterns |
+| `max_diff_lines` | no | `500` | Changed lines per model request; minimum 25 |
+| `max_comments` | no | `20` | Validated findings posted per run; maximum 50 |
+| `request_interval_seconds` | no | `30` | Pause between chunk requests; maximum 60 |
+| `model` | no | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | Comma-separated preferred and fallback model IDs |
+| `dry_run` | no | `false` | Analyze and log without posting |
 
-Example with all options:
+The Action outputs `issues_found`, `files_reviewed`, and `files_skipped` for downstream steps.
 
-```yaml
-- uses: rid325/ai-pr-reviewer@v1.0.0
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
-    ignore_patterns: '*.lock,*.generated.js,migrations/*'
-    max_diff_lines: 500
+## Pipeline
+
+```text
+pull_request event
+      │
+      ▼
+paginated GitHub file fetch
+      │
+      ▼
+ignore rules → missing-patch detection → line budget → chunking
+      │
+      ▼
+Gemini structured JSON (bounded retries)
+      │
+      ▼
+schema + filename + added-line + size + duplicate validation
+      │
+      ├── valid findings → inline review (general-comment fallback on GitHub 422)
+      └── run metadata  → one idempotently updated summary comment
 ```
 
-## How it works
+See [the design notes](docs/DESIGN.md) for trade-offs and [the security policy](SECURITY.md) for the trust model.
 
+## Security and fork behavior
+
+- Diff text is delimited as untrusted data and prompt instructions inside it are ignored.
+- ReviewBot uses `pull_request`, never `pull_request_target`; untrusted fork code therefore does not run with repository secrets.
+- GitHub withholds Actions secrets from fork pull requests. The example workflow should skip those runs or let a maintainer run ReviewBot after inspecting the branch.
+- Grant only `contents: read` and `pull-requests: write`. Never store a personal access token when `GITHUB_TOKEN` is sufficient.
+
+## Honest limitations
+
+- ReviewBot sees a diff, not full runtime behavior or complete repository context. Findings are advisory and require human judgment.
+- GitHub can omit `patch` for binary or very large files; these are named in the summary and skipped.
+- The total review budget is four times `max_diff_lines`; files beyond it are reported as skipped. At most four chunks are sent, with a configurable interval between them to respect constrained API tiers.
+- Findings are limited to added right-side lines, so a real issue caused only by deleted or unchanged code cannot receive an inline comment.
+- Model availability, quota, price, and behavior are controlled by Google. ReviewBot tries configured model IDs in order; override `model` if either default is unavailable to your account.
+
+## Development
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+docker build -t reviewbot .
 ```
-PR opened
-    │
-    ▼
-workflow triggers (review.yml)
-    │
-    ▼
-fetch diff via GitHub API
-    │
-    ▼
-filter ignored files → sort by size → chunk if needed
-    │
-    ▼
-Gemini API (one call per chunk)
-    │
-    ▼
-parse JSON review results
-    │
-    ▼
-post inline comments + PR summary
-```
 
-## Limitations
-
-- **Max diff size:** Files with more than ~300 changed lines may not include a patch from the GitHub API and are skipped with a warning. Larger diffs are chunked at `max_diff_lines` (default 500) across multiple Gemini calls.
-- **Languages:** Works best with Python, JavaScript/TypeScript, Go, and Java. Shell, YAML, and config files often produce noise.
-- **False positives:** Expect roughly 10–20% false positives on stylistic or context-dependent findings. The bot only sees the diff, not full repo context.
-- **Rate limits:** Very large PRs (50+ files) may take several minutes due to sequential Gemini calls.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under [MIT](LICENSE).

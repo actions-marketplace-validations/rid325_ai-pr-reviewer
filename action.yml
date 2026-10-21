@@ -17,6 +17,30 @@ inputs:
     required: false
     description: 'Maximum added/removed lines per Gemini API call; larger diffs are split into chunks'
     default: '500'
+  max_comments:
+    required: false
+    description: 'Maximum number of validated review comments to post'
+    default: '20'
+  request_interval_seconds:
+    required: false
+    description: 'Minimum pause between diff-chunk requests to respect constrained API tiers'
+    default: '30'
+  model:
+    required: false
+    description: 'Comma-separated Gemini model IDs, in preferred/fallback order'
+    default: 'gemini-3.5-flash-lite,gemini-3.1-flash-lite'
+  dry_run:
+    required: false
+    description: 'Analyze and print findings without posting to the pull request'
+    default: 'false'
+
+outputs:
+  issues_found:
+    description: 'Number of validated findings'
+  files_reviewed:
+    description: 'Number of files sent for review'
+  files_skipped:
+    description: 'Number of files skipped by filters or limits'
 
 runs:
   using: 'docker'
